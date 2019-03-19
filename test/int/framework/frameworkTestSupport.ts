@@ -46,7 +46,7 @@ export class TestProjectSpec {
         this._props.outFiles = props.outFiles || path.join(props.projectRoot, 'out');
         this._props.port = props.port || 7890;
         this._props.url = props.url || `http://localhost:${props.port}`;
-        this._props.launchConfig = props.launchConfig || { url: props.url, outFiles: props.outFiles, sourceMaps: true, webRoot: props.webRoot };
+        this._props.launchConfig = props.launchConfig || { url: props.url, outFiles: props.outFiles, runtimeExecutable:'node_modules/puppeteer/.local-chromium/win64-637110/chrome-win/chrome.exe' , sourceMaps: true, webRoot: props.webRoot };
     }
 
     /**
