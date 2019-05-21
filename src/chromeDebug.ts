@@ -21,7 +21,7 @@ const EXTENSION_NAME = 'debugger-for-chrome';
 // Cast because DebugSession is declared twice - in this repo's vscode-debugadapter, and that of -core... TODO
 const logFilePath = path.resolve(os.tmpdir(), 'vscode-chrome-debug.txt');
 
-function customizeComponents<T>(identifier: interfaces.ServiceIdentifier<T>, component: T, getComponentById: GetComponentByID): T {
+export function customizeComponents<T>(identifier: interfaces.ServiceIdentifier<T>, component: T, getComponentById: GetComponentByID): T {
     switch (identifier) {
         case TYPES.ISourcesRetriever:
             // We use our own version of the ISourcesRetriever component which adds support for getting the source of .html files with potentially multiple inline scripts
@@ -34,31 +34,37 @@ function customizeComponents<T>(identifier: interfaces.ServiceIdentifier<T>, com
     }
 }
 
-// This class specifies the customizations that chrome-debug does to -core
-const extensibilityPoints = new OnlyProvideCustomLauncherExtensibilityPoints(logFilePath, ChromeLauncher, ChromeRunner, customizeComponents);
-extensibilityPoints.updateArguments = (scenario, args) => new ArgumentsUpdater().updateArguments(scenario, args);
-extensibilityPoints.targetFilter = defaultTargetFilter;
-extensibilityPoints.pathTransformer = UrlPathTransformer;
-extensibilityPoints.bindAdditionalComponents = (diContainer: DependencyInjection) => {
-    diContainer.configureClass(TYPES.IServiceComponent, ShowOverlayWhenPaused);
-    diContainer.configureClass(CDTPDeprecatedPage, CDTPDeprecatedPage);
-};
+export function launchAdapter() {
 
-ChromeDebugSession.run(ChromeDebugSession.getSession(
-    {
-        adapter: ChromeDebugAdapter,
-        extensionName: EXTENSION_NAME,
-        logFilePath: logFilePath,
-        extensibilityPoints: extensibilityPoints
-    }));
+    // This class specifies the customizations that chrome-debug does to -core
+    const extensibilityPoints = new OnlyProvideCustomLauncherExtensibilityPoints(logFilePath, ChromeLauncher, ChromeRunner, customizeComponents);
+    extensibilityPoints.updateArguments = (scenario, args) => new ArgumentsUpdater().updateArguments(scenario, args);
+    extensibilityPoints.targetFilter = defaultTargetFilter;
+    extensibilityPoints.pathTransformer = UrlPathTransformer;
+    extensibilityPoints.bindAdditionalComponents = (diContainer: DependencyInjection) => {
+        diContainer.configureClass(TYPES.IServiceComponent, ShowOverlayWhenPaused);
+        diContainer.configureClass(CDTPDeprecatedPage, CDTPDeprecatedPage);
+    };
 
-/* tslint:disable:no-var-requires */
-const debugAdapterVersion = require('../../package.json').version;
-logger.log(EXTENSION_NAME + ': ' + debugAdapterVersion);
+    ChromeDebugSession.run(ChromeDebugSession.getSession(
+        {
 
-/* __GDPR__FRAGMENT__
-    "DebugCommonProperties" : {
-        "Versions.DebugAdapter" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-    }
-*/
-telemetry.telemetry.addCustomGlobalProperty({ 'Versions.DebugAdapter': debugAdapterVersion });
+            adapter: ChromeDebugAdapter,
+            extensionName: EXTENSION_NAME,
+            logFilePath: logFilePath,
+            extensibilityPoints: extensibilityPoints
+        }));
+
+    /* tslint:disable:no-var-requires */
+    const debugAdapterVersion = require('../../package.json').version;
+    logger.log(EXTENSION_NAME + ': ' + debugAdapterVersion);
+
+    /* __GDPR__FRAGMENT__
+        "DebugCommonProperties" : {
+            "Versions.DebugAdapter" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+        }
+    */
+    telemetry.telemetry.addCustomGlobalProperty({ 'Versions.DebugAdapter': debugAdapterVersion });
+}
+
+// launchAdapter();

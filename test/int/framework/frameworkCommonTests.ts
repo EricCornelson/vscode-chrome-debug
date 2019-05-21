@@ -6,6 +6,9 @@
 import { puppeteerTest } from '../puppeteer/puppeteerSuite';
 import { setBreakpoint } from '../intTestSupport';
 import { FrameworkTestContext } from './frameworkTestSupport';
+import * as puppeteer from 'puppeteer';
+import { BreakpointWizard } from '../wizards/breakpoints/breakpointWizard';
+import { BreakpointsWizard } from '../wizards/breakpoints/breakpointsWizard';
 
 /**
  * A common framework test suite that allows for easy (one-liner) testing of various
@@ -132,6 +135,40 @@ export class FrameworkTestSuite {
             await debugClient.pauseRequest({ threadId: 0 });
             await waitForPaused;
             await debugClient.continueRequest();
+        });
+    }
+
+    /**
+     * A generic breakpoint test. This can be used for many different types of breakpoint tests with the following structure:
+     *
+     * 1. Wait for the page to load by waiting for the selector: `waitSelectorId`
+     * 2. Set a breakpoint at `bpLabel`
+     * 3. Execute a trigger event that should cause the breakpoint to be hit using the function `trigger`
+     * 4. Assert that the breakpoint is hit on the expected location, and continue
+     *
+     * @param waitSelectorId
+     * @param bpLabel
+     * @param trigger
+     */
+    genericBreakpointTest( waitSelectorId: string, bpLabel: string, trigger: (page: puppeteer.Page) => Promise<void>) {
+        return puppeteerTest(`${this.frameworkName} - Should correctly stop on a breakpoint in an inline script`, this.suiteContext, async (context, page) => {
+
+            console.log('one');
+            const location = context.breakpointLabels.get(bpLabel);
+            console.log('two');
+            await page.waitForSelector(`#${waitSelectorId}`);
+            console.log('three');
+
+            await setBreakpoint(this.suiteContext.debugClient, location);
+            console.log(`setting bp: ${JSON.stringify(location)}`);
+            const triggerPromise = await trigger(page);
+            console.log('five');
+            await this.suiteContext.debugClient.assertStoppedLocation('breakpoint',  location);
+            console.log('six');
+            await this.suiteContext.debugClient.continueRequest();
+            console.log('seven');
+            await triggerPromise;
+            console.log('eight');
         });
     }
 }
