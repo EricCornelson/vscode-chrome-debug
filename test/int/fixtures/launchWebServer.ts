@@ -75,7 +75,7 @@ export class ProvideStaticUrl implements IFixture {
 
     public constructor(public readonly url: URL, private readonly testSpec: TestProjectSpec) {}
 
-    public get launchConfig(): ILaunchRequestArgs {
+    public get launchConfig(): any {
         return {...this.testSpec.props.launchConfig, url: this.url.href };
     }
     cleanUp() {}
